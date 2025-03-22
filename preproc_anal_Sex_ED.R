@@ -14,7 +14,6 @@ library(tidyverse)
 library(data.table)
 library(purrr)
 library(ggplot2)
-library(DHARMa)
 
 today <- format(Sys.Date(), "%Y-%m-%d")
 #plot
@@ -25,6 +24,7 @@ coefplot_fixest <- function(model) {
                    xlab = "Year",
                    ylab = "Coefficient Estimate")
 }
+
 #load ----
 path <- "C:/Users/Guillaume/Desktop/All projects/Databases INSEE OSCOUR SURSAUD etc/SURSAUD/"
 filename <- "SURSAUD_nbPassages_An_2024_VF.csv"
@@ -60,6 +60,7 @@ length(unique(df_Sex_ED$rge_code_etablissement))
 "" %in% df_Sex_ED$rge_code_etablissement
 length(unique(df_Sex_ED$Libelle))
 length(unique(df_Sex_ED$code_insee))
+#No missing in rge_code_etablissement so we'll use rge_code_etablissement as FE
 
 table(df_Sex_ED$pas_sexe)
 
@@ -93,7 +94,7 @@ summaries <- map_dfr(columns_to_plot, ~ {
 # View the summaries
 print(summaries)
 
-# subset of interest ----
+# subset of interest (by age)----
 df_Sex_ED_subset <- df_Sex_ED %>%
   filter(Clage == "18-64 ans") %>%
   filter(pas_sexe != "I") %>%
@@ -105,44 +106,6 @@ df_ED_subset <- df_ED %>%
   #filter(pas_sexe != "I") %>%
   mutate(year=factor(annee_entree))
 df_ED_subset$year <- relevel(df_ED_subset$year, ref = "2019")
-
-#feols ----
-model <- feols(
-  log(nb_F40F49_SS/nb_TCC_SS+1) ~ year * pas_sexe  | #+ nb_TCC_SS
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  cluster = ~rge_code_etablissement 
-)
-summary(model)
-coefplot_fixest(model)
-
-model <- feols(
-  log(nb_F30F39_SS/nb_TCC_SS+1) ~ year * pas_sexe  | #+ nb_TCC_SS
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  cluster = ~rge_code_etablissement
-)
-summary(model)
-coefplot_fixest(model)
-
-model <- feols(
-  log(nb_F20F29_SS/nb_TCC_SS+1) ~ year * pas_sexe  | #+ nb_TCC_SS
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  cluster = ~rge_code_etablissement
-)
-summary(model)
-coefplot_fixest(model)
-
-model <- feols(
-  log(nb_F10F19_SS/nb_TCC_SS+1) ~ year * pas_sexe | #+ nb_TCC_SS 
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  cluster = ~rge_code_etablissement 
-)
-summary(model)
-coefplot_fixest(model)
-
 
 #Poisson Sex ----
 model <- fepois(
@@ -192,57 +155,6 @@ model <- feglm(
   offset =~  log(nb_TCC_SS), 
   cluster = ~rge_code_etablissement,
   family="quasipoisson"
-)
-summary(model)
-coefplot_fixest(model)
-
-
-# NOPE! Pois just year ----
-
-model <- fepois(
-  nb_F40F49_SS ~ year + nb_TCC_SS | #
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  offset = ~nb_TCC_SS, 
-  cluster = ~rge_code_etablissement
-)
-coefplot_fixest(model)
-
-model <- fepois(
-  nb_F30F39_SS ~ year + nb_TCC_SS | #
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  offset = ~nb_TCC_SS, 
-  cluster = ~rge_code_etablissement
-)
-coefplot_fixest(model)
-
-model <- fepois(
-  nb_F20F29_SS ~ year + nb_TCC_SS | #
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  offset = ~nb_TCC_SS, 
-  cluster = ~rge_code_etablissement
-)
-coefplot_fixest(model)
-
-model <- fepois(
-  nb_F10F19_SS ~ year + nb_TCC_SS | #
-    rge_code_etablissement , #
-  data = df_Sex_ED_subset, 
-  #offset = ~nb_TCC_SS, 
-  cluster = ~rge_code_etablissement
-)
-summary(model)
-coefplot_fixest(model)
-
-#NOPE! Pois just year sum ----
-model <- fepois(
-  N ~ year  | #
-    rge_code_etablissement , #
-  data = df_ED_subset, 
-  #offset = ~nb_TCC_SS, 
-  cluster = ~rge_code_etablissement
 )
 summary(model)
 coefplot_fixest(model)
