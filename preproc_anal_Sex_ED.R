@@ -55,14 +55,18 @@ df_ED <- df_Sex_ED_raw %>%
 head(df_ED)
 
 # range of dpd variable ----
+#sex
+table(df_Sex_ED$pas_sexe)
+
+#year
 table(df_Sex_ED$annee_entree)
+
+#FE
 length(unique(df_Sex_ED$rge_code_etablissement))
 "" %in% df_Sex_ED$rge_code_etablissement
 length(unique(df_Sex_ED$Libelle))
 length(unique(df_Sex_ED$code_insee))
 #No missing in rge_code_etablissement so we'll use rge_code_etablissement as FE
-
-table(df_Sex_ED$pas_sexe)
 
 # Select columns starting with "nb"
 columns_to_plot <- df_Sex_ED %>%
@@ -107,7 +111,7 @@ df_ED_subset <- df_ED %>%
   mutate(year=factor(annee_entree))
 df_ED_subset$year <- relevel(df_ED_subset$year, ref = "2019")
 
-#Poisson Sex ----
+#Poisson anal ----
 model <- fepois(
   nb_F40F49_SS ~ year * pas_sexe + nb_TCC_SS | #
     rge_code_etablissement , #
@@ -148,6 +152,7 @@ model <- fepois(
 summary(model)
 coefplot_fixest(model)
 
+#quasi poisson brings similar results
 model <- feglm(
   nb_F10F19_SS ~ year * pas_sexe + nb_TCC_SS   | #
     rge_code_etablissement , #
